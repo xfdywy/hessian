@@ -4,12 +4,13 @@ import scipy.linalg as la
 import matplotlib.pyplot as plt
 
 ###### some number
-dim_n = 20
-test_n = 60
+dim_n = 40
+test_n = 1000
 
-def diagmatrix(dim,positive):
-    temp = np.random.uniform(0,10,[dim])
-    temp[positive:]  *= -1
+def diagmatrix(dim,positive,zero=0):
+    temp = np.random.uniform(0,10,[dim]) *-1
+    temp[0:positive]  *=  -1
+    temp[positive:positive+ zero]  *= 0
     return(np.diag(temp))
 
 
@@ -20,7 +21,7 @@ def diagmatrix(dim,positive):
 A = np.random.random([dim_n,dim_n])
 V = la.orth(A)
 
-B = diagmatrix(dim_n,17)
+B = diagmatrix(dim_n,10,0, )
 
 mat = np.dot(np.dot(np.transpose(V),B),V)
 
@@ -36,3 +37,4 @@ for ii in range(test_n):
 
 plt.plot(res)
 print(min(res))
+print(max(res))

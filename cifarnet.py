@@ -4,6 +4,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from keras.datasets import mnist
+
 import tensorflow as tf
 
 slim = tf.contrib.slim
@@ -20,6 +22,14 @@ class cifarnet:
        self.prediction_fn=slim.softmax
        self.is_training = True
 #       self.learningrate = learningrate
+
+
+    def loaddata(self,data = None):
+        if data == None : 
+
+            (X_train, y_train), (X_test, y_test) = cifar10.load_data()
+        else:
+            self.x_train,self.y_train,self.x_test,self.y_test = data
   
 
     def buildnet(self):
