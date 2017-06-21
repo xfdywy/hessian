@@ -143,11 +143,13 @@ class mnistnet:
 #            self.end_points['Predictions'] = self.prediction_fn(self.logits, scope='Predictions')
             
             self.allvars = tf.trainable_variables()
-            self.init_allvars = tf.variables_initializer(self.allvars)
+            
             
             self.train_sgd = tf.train.GradientDescentOptimizer(self.learningrate).minimize(self.meanloss)
             self.train_momentum   = tf.train.MomentumOptimizer(self.learningrate,self.momentum).minimize(self.meanloss)
             self.train_adam = tf.train.AdamOptimizer(self.learningrate).minimize(self.meanloss)
+            
+            self.init_allvars = tf.global_variables_initializer()
             
             self.saver = tf.train.Saver()
      
@@ -170,10 +172,11 @@ class mnistnet:
             
     def train_mode(self,mode_train):
         self.mode_train = mode_train
+        self.decay = 0
         
         if mode_train == 1:           
             self.info['opti_method'] = 'sgd'
-            self.decay = 1e-8
+#            self.decay = 1e-8
  
             
         elif mode_train ==2 :
