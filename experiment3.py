@@ -44,7 +44,7 @@ for jj in range(50):
             model.save_model('exp1')
         
     
-        if ii % 1000 == 0 :
+        if ii+1 % 1000 == 0 :
             model.fill_train_data()
             model.calloss()
             loss.append(model.v_loss)
@@ -54,16 +54,16 @@ for jj in range(50):
             print('epoch',model.epoch,'loss', model.v_loss,'acc',model.v_acc,'lr',model.lr)
             
         
-    model.fill_train_data()
-    model.eval_grad()
-    print(model.v_grad_max)
-    print(model.v_grad_min)
-    print(model.v_grad_norm)
-    grad_norm.append(model.v_grad_norm)
-    
-    model.eval_weight()
-    weight.append(model.v_weight)
-    
-    dis_1 = np.linalg.norm(weight[-1]-weight[-2])
-    dis.append(dis_1)   
-    print(dis_1 )
+#    model.fill_train_data()
+#    model.eval_grad()
+#    print(model.v_grad_max)
+#    print(model.v_grad_min)
+#    print(model.v_grad_norm)
+#    grad_norm.append(model.v_grad_norm)
+#    
+#    model.eval_weight()
+#    weight.append(model.v_weight)
+#    
+#    dis_1 = np.linalg.norm(weight[-1]-weight[-2])
+#    dis.append(dis_1)   
+#    print(dis_1 )
