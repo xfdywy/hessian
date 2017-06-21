@@ -13,7 +13,7 @@ slim = tf.contrib.slim
 trunc_normal = lambda stddev: tf.truncated_normal_initializer(stddev=stddev)
 import numpy as np
 import pickle
-class mnistnet:
+class mnistnet_cnn:
     def __init__(self,num_classes=10,minibatchsize=1,imagesize=28,dropout_keep_prob=1 ,scope='cifarnet' ,learningrate = 0.001,momentum = 0.5):
        self.num_classes=num_classes  
        self.batch_size=minibatchsize
@@ -75,26 +75,26 @@ class mnistnet:
         
         
         with tf.variable_scope(self.scope, 'CifarNet', [self.images, self.num_classes]):
-            parameters =  tf.Variable(tf.concat( [tf.truncated_normal([28*28*64 ] ), tf.zeros([64 ]),
-                            tf.truncated_normal([ 64 *32  ] ), tf.zeros([32 ]),
-                            tf.truncated_normal([32*16   ] ), tf.zeros([16 ]),
+            parameters =  tf.Variable(tf.concat( [tf.truncated_normal([5*5*32 ] ), tf.zeros([32 ]),
+                            tf.truncated_normal([ 5 *5 *32*64  ] ), tf.zeros([64 ]),
+                            tf.truncated_normal([7*7*36*16   ] ), tf.zeros([16 ]),
                             tf.truncated_normal([16*10   ] ), tf.zeros([10 ])    ],0)   )  
             
             self.parameters = parameters
             
             begin = 0
-            para_fc1 = tf.reshape(tf.slice(parameters,  [begin ],[28*28*64 ]), [28*28 ,64] )
-            begin += 28*28*64
-            para_fc1_bias = tf.reshape(tf.slice(parameters,  [begin ],[64 ]), [64 ] )
-            begin += 64
-            
-            para_fc2 = tf.reshape(tf.slice(parameters,  [begin, ],[64 *32  ]), [64 ,32 ] )
-            begin += 64 *32 
-            para_fc2_bias = tf.reshape(tf.slice(parameters,  [begin, ], [32 ] ), [32 ])
+            para_c1 = tf.reshape(tf.slice(parameters,  [begin ],[5*5*16 ]), [5,5 ,1,16] )
+            begin += 5*5*16
+            para_c1_bias = tf.reshape(tf.slice(parameters,  [begin ],[16 ]), [16 ] )
             begin += 32
             
-            para_fc3 = tf.reshape(tf.slice(parameters,  [begin ], [32*16 ] ), [32,16])
-            begin += 32*16
+            para_c2 = tf.reshape(tf.slice(parameters,  [begin, ],[5 *5*16*32  ]), [5,5,16,32 ] )
+            begin += 5 *5*16*32
+            para_c2_bias = tf.reshape(tf.slice(parameters,  [begin, ], [32 ] ), [32 ])
+            begin += 32
+            
+            para_fc3 = tf.reshape(tf.slice(parameters,  [begin ], [7*7*32*16] ), [7*7*32,16])
+            begin += 7*7*32*16
             para_fc3_bias = tf.reshape(tf.slice(parameters,  [begin ], [16 ] ), [16 ])
             begin += 16
             
@@ -108,15 +108,32 @@ class mnistnet:
             para_fc5_bias = tf.reshape(tf.slice(parameters,  [begin ], [10 ] ), [10 ])
             begin += 10
             
-            net = tf.contrib.slim.flatten(self.images  )
-            net = tf.nn.relu(tf.matmul(net,para_fc1) + para_fc1_bias)
-            net = tf.nn.dropout(x = net, keep_prob =  self.dropout_keep_prob , name='dropout1') 
+#            net = tf.contrib.slim.flatten(self.images  )
+
+        
+#            net = tf.nn.relu(tf.matmul(net,para_fc1) + para_fc1_bias)
+#            net = tf.nn.dropout(x = net, keep_prob =  self.dropout_keep_prob , name='dropout1') 
+#            
+#            net = tf.nn.relu(tf.matmul(net,para_fc2) + para_fc2_bias)
+#            net = tf.nn.dropout(x = net, keep_prob =  self.dropout_keep_prob , name='dropout2') 
+#            
+#            net = tf.nn.relu(tf.matmul(net,para_fc3) + para_fc3_bias)
+#            net = tf.nn.dropout(x = net, keep_prob =  self.dropout_keep_prob , name='dropout3') 
+
+            net  = tf.expand_dims(self.images,-1)            
+
+
+            net = tf.nn.relu(tf.nn.conv2d(net , para_c1 , [1,1,1,1],'SAME') + para_c1_bias)
+            net = tf.nn.avg_pool(net, [1,2,2,1],[1,2,2,1],'SAME')
             
-            net = tf.nn.relu(tf.matmul(net,para_fc2) + para_fc2_bias)
-            net = tf.nn.dropout(x = net, keep_prob =  self.dropout_keep_prob , name='dropout2') 
+            net = tf.nn.relu(tf.nn.conv2d(net , para_c2 , [1,1,1,1],'SAME') + para_c2_bias)
+            net = tf.nn.avg_pool(net, [1,2,2,1],[1,2,2,1],'SAME')
+            
+            net = tf.contrib.slim.flatten(net)
             
             net = tf.nn.relu(tf.matmul(net,para_fc3) + para_fc3_bias)
             net = tf.nn.dropout(x = net, keep_prob =  self.dropout_keep_prob , name='dropout3') 
+            
             
             
             self.logits = tf.matmul(net,para_fc5) + para_fc5_bias
@@ -143,13 +160,11 @@ class mnistnet:
 #            self.end_points['Predictions'] = self.prediction_fn(self.logits, scope='Predictions')
             
             self.allvars = tf.trainable_variables()
-            
+            self.init_allvars = tf.variables_initializer(self.allvars)
             
             self.train_sgd = tf.train.GradientDescentOptimizer(self.learningrate).minimize(self.meanloss)
             self.train_momentum   = tf.train.MomentumOptimizer(self.learningrate,self.momentum).minimize(self.meanloss)
             self.train_adam = tf.train.AdamOptimizer(self.learningrate).minimize(self.meanloss)
-            
-            self.init_allvars = tf.global_variables_initializer()
             
             self.saver = tf.train.Saver()
      
@@ -172,11 +187,10 @@ class mnistnet:
             
     def train_mode(self,mode_train):
         self.mode_train = mode_train
-        self.decay = 0
         
         if mode_train == 1:           
             self.info['opti_method'] = 'sgd'
-#            self.decay = 1e-8
+            self.decay = 0.0001
  
             
         elif mode_train ==2 :
@@ -203,16 +217,9 @@ class mnistnet:
         
     def next_batch(self):
         if self.mode_data == 1: 
-            
-            if self.data_point >= self.one_epoch_iter_num:
-                self.data_point =0
-                self.shuffledata()
-                self.epoch = self.epoch+1
-            
-            sample = np.random.randint(0,self.test_data_num,[self.batch_size])
-            self.datax = self.x_train[sample  ]
+            sample = np.random.randint(0,self.data_num,[self.batch_size])
+            self.datax = self.x_train[sample,:,:,:]
             self.datay = self.y_train[sample]
-            self.data_point += 1
             
         elif self.mode_data ==2:   
             
@@ -231,7 +238,6 @@ class mnistnet:
     
     def train_net(self):
         mode_train = self.mode_train
-        self.global_step += 1
         
         self.feed_dict = {self.images : self.datax, self.label : self.datay ,
                      self.learningrate : self.lr , self.dropout_keep_prob : self.dp,
@@ -308,10 +314,9 @@ class mnistnet:
         
     def save_model(self , name):
         tfmodel_name = name + '_' + '_'.join(self.info.values())
-        self.saver.save(self.sess,'./save/'+tfmodel_name)
-    def save_weight(self,name):    
-        tfmodel_name = name + '_' + '_'.join(self.info.values())
-        with open('./save/'+tfmodel_name+'.pkl','w') as f:
+        self.saver.save(self.sess,tfmodel_name)
+        
+        with open('./save/'+tfmodel_name,'w') as f:
             pickle.dump(self.v_weight , f)
         
         
