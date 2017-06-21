@@ -1,0 +1,2 @@
+model_checkpoint_path: "exp1_random_sample_adam"
+all_model_checkpoint_paths: "exp1_random_sample_adam"
