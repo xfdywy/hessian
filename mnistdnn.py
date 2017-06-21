@@ -13,7 +13,7 @@ slim = tf.contrib.slim
 trunc_normal = lambda stddev: tf.truncated_normal_initializer(stddev=stddev)
 import numpy as np
 import pickle
-class cifarnet:
+class mnistnet:
     def __init__(self,num_classes=10,minibatchsize=1,imagesize=28,dropout_keep_prob=1 ,scope='cifarnet' ,learningrate = 0.001,momentum = 0.5):
        self.num_classes=num_classes  
        self.batch_size=minibatchsize
@@ -173,7 +173,7 @@ class cifarnet:
         
         if mode_train == 1:           
             self.info['opti_method'] = 'sgd'
-            self.decay = 0.0001
+            self.decay = 1e-8
  
             
         elif mode_train ==2 :
@@ -200,8 +200,8 @@ class cifarnet:
         
     def next_batch(self):
         if self.mode_data == 1: 
-            sample = np.random.randint(0,self.data_num,[self.batch_size])
-            self.datax = self.x_train[sample,:,:,:]
+            sample = np.random.randint(0,self.test_data_num,[self.batch_size])
+            self.datax = self.x_train[sample  ]
             self.datay = self.y_train[sample]
             
         elif self.mode_data ==2:   
@@ -221,6 +221,7 @@ class cifarnet:
     
     def train_net(self):
         mode_train = self.mode_train
+        self.global_step += 1
         
         self.feed_dict = {self.images : self.datax, self.label : self.datay ,
                      self.learningrate : self.lr , self.dropout_keep_prob : self.dp,
