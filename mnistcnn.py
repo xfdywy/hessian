@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun 21 16:24:21 2017
+
+@author: v-yuewng
+"""
+
 
 
 from __future__ import absolute_import
@@ -13,7 +20,7 @@ slim = tf.contrib.slim
 trunc_normal = lambda stddev: tf.truncated_normal_initializer(stddev=stddev)
 import numpy as np
 import pickle
-class mnistnet_cnn:
+class mnistnet:
     def __init__(self,num_classes=10,minibatchsize=1,imagesize=28,dropout_keep_prob=1 ,scope='cifarnet' ,learningrate = 0.001,momentum = 0.5):
        self.num_classes=num_classes  
        self.batch_size=minibatchsize
@@ -135,7 +142,6 @@ class mnistnet_cnn:
             net = tf.nn.dropout(x = net, keep_prob =  self.dropout_keep_prob , name='dropout3') 
             
             
-            
             self.logits = tf.matmul(net,para_fc5) + para_fc5_bias
             
             y_one_hot = tf.one_hot(self.label,10)
@@ -160,11 +166,13 @@ class mnistnet_cnn:
 #            self.end_points['Predictions'] = self.prediction_fn(self.logits, scope='Predictions')
             
             self.allvars = tf.trainable_variables()
-            self.init_allvars = tf.variables_initializer(self.allvars)
+            
             
             self.train_sgd = tf.train.GradientDescentOptimizer(self.learningrate).minimize(self.meanloss)
             self.train_momentum   = tf.train.MomentumOptimizer(self.learningrate,self.momentum).minimize(self.meanloss)
             self.train_adam = tf.train.AdamOptimizer(self.learningrate).minimize(self.meanloss)
+            
+            self.init_allvars = tf.global_variables_initializer()
             
             self.saver = tf.train.Saver()
      
@@ -187,10 +195,11 @@ class mnistnet_cnn:
             
     def train_mode(self,mode_train):
         self.mode_train = mode_train
+        self.decay = 0
         
         if mode_train == 1:           
             self.info['opti_method'] = 'sgd'
-            self.decay = 0.0001
+#            self.decay = 1e-8
  
             
         elif mode_train ==2 :
@@ -217,9 +226,16 @@ class mnistnet_cnn:
         
     def next_batch(self):
         if self.mode_data == 1: 
-            sample = np.random.randint(0,self.data_num,[self.batch_size])
-            self.datax = self.x_train[sample,:,:,:]
+ 
+            if self.data_point >= self.one_epoch_iter_num:
+                self.data_point =0
+                self.shuffledata()
+                self.epoch = self.epoch+1
+            
+            sample = np.random.randint(0,self.test_data_num,[self.batch_size])
+            self.datax = self.x_train[sample  ]
             self.datay = self.y_train[sample]
+            self.data_point += 1
             
         elif self.mode_data ==2:   
             
@@ -238,6 +254,7 @@ class mnistnet_cnn:
     
     def train_net(self):
         mode_train = self.mode_train
+        self.global_step += 1
         
         self.feed_dict = {self.images : self.datax, self.label : self.datay ,
                      self.learningrate : self.lr , self.dropout_keep_prob : self.dp,
@@ -293,7 +310,7 @@ class mnistnet_cnn:
     def eval_grad(self ):
         v_grad = self.sess.run(self.grad_op,feed_dict = {self.images : self.datax , self.label : self.datay ,self.dropout_keep_prob : self.dp})
         
-        self.v_grad_norm = np.linalg.norm(v_grad) / 1.0 / len(v_grad)
+        self.v_grad_norm = np.linalg.norm(v_grad) 
         self.v_grad_max = np.max(v_grad)
         self.v_grad_min = np.min(v_grad)
 #        self.v_grad_upper = 
@@ -314,9 +331,10 @@ class mnistnet_cnn:
         
     def save_model(self , name):
         tfmodel_name = name + '_' + '_'.join(self.info.values())
-        self.saver.save(self.sess,tfmodel_name)
-        
-        with open('./save/'+tfmodel_name,'w') as f:
+        self.saver.save(self.sess,'./save/'+tfmodel_name)
+    def save_weight(self,name):    
+        tfmodel_name = name + '_' + '_'.join(self.info.values())
+        with open('./save/'+tfmodel_name+'.pkl','w') as f:
             pickle.dump(self.v_weight , f)
         
         

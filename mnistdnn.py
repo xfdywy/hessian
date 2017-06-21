@@ -203,7 +203,7 @@ class mnistnet:
         
     def next_batch(self):
         if self.mode_data == 1: 
-            
+ 
             if self.data_point >= self.one_epoch_iter_num:
                 self.data_point =0
                 self.shuffledata()
@@ -287,7 +287,7 @@ class mnistnet:
     def eval_grad(self ):
         v_grad = self.sess.run(self.grad_op,feed_dict = {self.images : self.datax , self.label : self.datay ,self.dropout_keep_prob : self.dp})
         
-        self.v_grad_norm = np.linalg.norm(v_grad) / 1.0 / len(v_grad)
+        self.v_grad_norm = np.linalg.norm(v_grad) 
         self.v_grad_max = np.max(v_grad)
         self.v_grad_min = np.min(v_grad)
 #        self.v_grad_upper = 

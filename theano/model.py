@@ -52,6 +52,7 @@ import sys
 import timeit
 
 import numpy as np
+import numpy
 
 import theano
 import theano.tensor as T
@@ -138,11 +139,11 @@ class lenet:
         paras = model.weights
         
         self.dl_dw = K.gradients(loss,paras)
-        x = paras 
-        y = self.dl_dw 
+        self.x = paras 
+ 
         
-        self.all_paras_dim = [x.shape.eval() for x in dl_dw]
-        self.all_paras_num = [np.prod(x) for x in dl_dw]
+        self.all_paras_dim = [x.shape.eval() for x in self.x]
+        self.all_paras_num = [np.prod(x) for x in self.all_paras_dim]
             
             
         
@@ -156,7 +157,7 @@ class lenet:
         f = K.function([self.x,self.y,K.learning_phase()],dl_dw)
         
     def cal_allvar_list(self):
-        self.all_d_list = []
+        self.all_d_list = [None]*
         for nii,ii in enumerate(self.all_paras_dim):
             print(ii)
             if len(ii)==4:
