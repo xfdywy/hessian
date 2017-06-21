@@ -29,6 +29,7 @@ class cifarnet:
        self.dp = dropout_keep_prob
        self.mt = momentum
        
+       self.epoch = 0
 
 
        
@@ -39,14 +40,22 @@ class cifarnet:
 
 
     def loaddata(self,data = None):
-        if data == None : 
+        if data is None : 
+            print(1111)
 
-            (x_train, y_train), (x_test, y_test) = mnist.load_data()
+            (self.x_train, self.y_train), (self.x_test, self.y_test) = mnist.load_data()
         else:
             self.x_train,self.y_train,self.x_test,self.y_test = data
             
-        self.train_data_num = len(x_train)
-        self.test_data_num = len(x_test)
+        self.x_train  =  self.x_train / 255.0
+#        self.y_train  = self.y_train / 255.0
+        self.x_test  = self.x_test / 255.0
+#        self.t_test  = self.t_test / 255.0
+            
+        self.train_data_num = len(self.x_train)
+        self.test_data_num = len(self.x_test)
+        
+        self.one_epoch_iter_num = self.train_data_num   //  self.batch_size
         
         self.qujian()
         self.shuffledata()
@@ -66,10 +75,10 @@ class cifarnet:
         
         
         with tf.variable_scope(self.scope, 'CifarNet', [self.images, self.num_classes]):
-            parameters =  tf.Variable(tf.concat( [tf.truncated_normal([28*28*64 ]), tf.zeros([64 ]),
-                            tf.truncated_normal([ 64 *32  ]), tf.zeros([32 ]),
-                            tf.truncated_normal([32*16   ]), tf.zeros([16 ]),
-                            tf.truncated_normal([16*10   ]), tf.zeros([10 ])    ],0)   )  
+            parameters =  tf.Variable(tf.concat( [tf.truncated_normal([28*28*64 ] ), tf.zeros([64 ]),
+                            tf.truncated_normal([ 64 *32  ] ), tf.zeros([32 ]),
+                            tf.truncated_normal([32*16   ] ), tf.zeros([16 ]),
+                            tf.truncated_normal([16*10   ] ), tf.zeros([10 ])    ],0)   )  
             
             self.parameters = parameters
             
@@ -114,16 +123,18 @@ class cifarnet:
             
             y_one_hot = tf.one_hot(self.label,10)
             
-            softmax = tf.nn.softmax(self.logits)
-            
-            self.loss = -tf.reduce_sum(y_one_hot * tf.log(softmax), reduction_indices=[1])
-            
+#            self.softmax = tf.nn.softmax(self.logits)
+#            ex =  tf.exp(self.logits - tf.reshape(tf.reduce_max(self.logits,1 ), [-1,1]) ) 
+#            self.softmax = ex / tf.reshape(tf.reduce_sum(ex,1),[-1,1])
+#            
+#            self.loss = -tf.reduce_sum(y_one_hot * tf.log(self.softmax), reduction_indices=[1])
+#            self.loss = tf.reduce_sum(self.softmax - self.)
             
 #            self.loss = softmax - y_one_hot
             
 #            self.loss = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits,labels = y_one_hot)
             
-#            self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = self.logits,labels = self.label)
+            self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = self.logits,labels = self.label)
             self.meanloss = tf.reduce_mean(self.loss)
             
             self.grad_op = tf.gradients(self.meanloss, self.parameters)
@@ -140,21 +151,43 @@ class cifarnet:
             
             self.saver = tf.train.Saver()
      
-    def init_net(self , sess):
+    def init_net(self ):
         self.sess = tf.Session()
         self.sess.run(self.init_allvars)
         self.global_step = 0
         self.data_point = 0
         
-    def data_mode(self,mode) :
+    def data_mode(self,mode_data) :
         
-        self.mode = mode
+        self.mode_data = mode_data
         
-        if mode == 1:
+        if mode_data == 1:
             self.info['sample_method'] = 'random_sample'
 
-        elif mode ==2:
+        elif mode_data ==2:
             self.info['sample_method'] = 'order_batch'
+            
+            
+    def train_mode(self,mode_train):
+        self.mode_train = mode_train
+        
+        if mode_train == 1:           
+            self.info['opti_method'] = 'sgd'
+            self.decay = 0.0001
+ 
+            
+        elif mode_train ==2 :
+            self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
+            self.info['opti_method'] = 'momentum'
+ 
+            
+        elif mode_train ==3:
+            self.info['opti_method'] = 'adam'
+ 
+            
+        elif mode_train == 4:
+            pass
+     
             
     def fill_train_data(self):
         self.datax = self.x_train
@@ -166,12 +199,17 @@ class cifarnet:
  
         
     def next_batch(self):
-        if self.mode == 1: 
+        if self.mode_data == 1: 
             sample = np.random.randint(0,self.data_num,[self.batch_size])
             self.datax = self.x_train[sample,:,:,:]
             self.datay = self.y_train[sample]
             
-        elif self.mode ==2:           
+        elif self.mode_data ==2:   
+            
+            if self.data_point >= self.one_epoch_iter_num:
+                self.data_point =0
+                self.shuffledata()
+                self.epoch = self.epoch+1
           
             sample =  self.data_index[self.batch_index[self.data_point][0] : self.batch_index[self.data_point][1] ]
       
@@ -181,27 +219,28 @@ class cifarnet:
             self.data_point = self.data_point + 1
         
     
-    def train_net(self,mode):
+    def train_net(self):
+        mode_train = self.mode_train
         
         self.feed_dict = {self.images : self.datax, self.label : self.datay ,
                      self.learningrate : self.lr , self.dropout_keep_prob : self.dp,
                      self.momentum : self.mt}
         
-        if mode == 1:           
-            self.info['opti_method'] = 'sgd'
+        if mode_train == 1:           
+#            self.info['opti_method'] = 'sgd'
             self.sess.run(self.train_sgd,self.feed_dict)
             self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
             
-        elif mode ==2 :
+        elif mode_train ==2 :
             self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
-            self.info['opti_method'] = 'momentum'
+#            self.info['opti_method'] = 'momentum'
             self.sess.run(self.train_momentum,self.feed_dict)
             
-        elif mode ==3:
-            self.info['opti_method'] = 'adam'
+        elif mode_train ==3:
+#            self.info['opti_method'] = 'adam'
             self.sess.run(self.train_adam,self.feed_dict)
             
-        elif mode == 4:
+        elif mode_train == 4:
             pass
      
         
@@ -220,15 +259,18 @@ class cifarnet:
     def qujian(self):
         self.batch_index =[]
         for ii in range(self.one_epoch_iter_num):
-            self.batch_index.append( [ii * self.minibatch,(ii+1) * self.minibatch ] )
+            self.batch_index.append( [ii * self.batch_size,(ii+1) * self.batch_size ] )
             
                
-            
+    def calloss(self):
+        self.v_loss = self.sess.run(self.meanloss,feed_dict = {self.images : self.datax , self.label : self.datay ,self.dropout_keep_prob : self.dp})
+ 
+ 
             
     def calacc(self):
         predict = self.sess.run(self.logits,feed_dict = {self.images : self.datax , self.label : self.datay ,self.dropout_keep_prob : self.dp})
         predict = np.argmax(predict,1)
-        self.acc = (np.sum(predict == self.datay)*1.0 / len(self.datay))
+        self.v_acc = (np.sum(predict == self.datay)*1.0 / len(self.datay))
 #        return(self.acc)
         
     def eval_grad(self ):
@@ -250,6 +292,8 @@ class cifarnet:
         
     def eval_weight(self):
         self.v_weight  = self.sess.run(self.parameters) 
+        
+ 
         
     def save_model(self , name):
         tfmodel_name = name + '_' + '_'.join(self.info.values())
