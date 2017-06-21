@@ -1,7 +1,7 @@
 from mnistdnn import mnistnet
 import numpy as np
-
-model   = mnistnet(minibatchsize=64, learningrate = 0.01)
+import matplotlib.pyplot as plt
+model   = mnistnet(minibatchsize=64, learningrate = 0.001)
 
 
 model.buildnet()
@@ -25,13 +25,14 @@ weight = []
 grad_norm = []
 
 dis =[]
+model.lr = 0.01
 
-
-for jj in range(30):
+for jj in range(50):
     model.eval_weight()
     weight.append(model.v_weight)
+    model.lr *= 0.9
     for ii in range(10000): 
-        model.lr = 0.01
+
         model.global_step = 0
         model.next_batch()
     
