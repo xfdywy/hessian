@@ -318,7 +318,7 @@ class mnistnet:
         self.saver.save(self.sess,'./save/'+tfmodel_name)
     def save_weight(self,name):    
         tfmodel_name = name + '_' + '_'.join(self.info.values())
-        with open('./save/dnn/'+tfmodel_name+'.pkl','w') as f:
+        with open('./save/dnn/'+tfmodel_name+'.pkl','wb') as f:
             pickle.dump(self.v_weight , f)
         
         
