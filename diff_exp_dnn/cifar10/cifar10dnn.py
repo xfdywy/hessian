@@ -256,10 +256,10 @@ class mnistnet:
         if mode_train == 1:           
 #            self.info['opti_method'] = 'sgd'
             self.sess.run(self.train_sgd,self.feed_dict)
-            self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
+#            self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
             
         elif mode_train ==2 :
-            self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
+#            self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
 #            self.info['opti_method'] = 'momentum'
             self.sess.run(self.train_momentum,self.feed_dict)
             
@@ -321,9 +321,9 @@ class mnistnet:
         
  
         
-    def save_model(self , name):
+    def save_model(self ,path, name):
         tfmodel_name = name + '_' + '_'.join(self.info.values())
-        self.saver.save(self.sess,'./save/'+tfmodel_name)
+        self.saver.save(self.sess,path+tfmodel_name)
     def save_weight(self,name):    
         tfmodel_name = name + '_' + '_'.join(self.info.values())
         with open('./save/dnn/'+tfmodel_name+'.pkl','wb') as f:

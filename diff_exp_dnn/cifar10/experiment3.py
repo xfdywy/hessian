@@ -1,7 +1,8 @@
 from cifar10dnn import mnistnet
 import numpy as np
 import matplotlib.pyplot as plt
-model   = mnistnet(minibatchsize=50, learningrate = 0.01)
+import pickle
+model   = mnistnet(minibatchsize=50, learningrate = 0.1)
 
 
 model.buildnet()
@@ -11,7 +12,7 @@ model.loaddata()
 model.init_net()
 
 model.data_mode(1)
-model.train_mode(1)
+model.train_mode(2)
 
 epoch=0
 
@@ -89,12 +90,32 @@ for ii in range(10000):
         
         
 
-        if  epoch >=1 and train_loss[-1] - np.mean(train_loss[-5:])  < (model.lr / 10.0):
+        if  model.epoch >=1 and  np.mean(train_loss[-5:]) -train_loss[-1]  < (model.lr/100.0 ):
             model.lr = model.lr / 10.0
             print('learning rate decrease to ', model.lr)
  
+all_res = {'info' : 'dnn_cifar10_sgd' ,
+           'train_acc' :train_acc,
+            'train_loss':train_loss,
+            'test_acc' :test_acc,
+            'test_loss' :test_loss,
             
-        
+            'weight' :weight,
+            
+            'train_grad_norm_l2' :train_grad_norm_l2,
+            'train_grad_norm_max' :train_grad_norm_max,
+            'train_grad_norm_l1': train_grad_norm_l1,
+            
+            
+            'test_grad_norm_l2' :test_grad_norm_l2,
+            'test_grad_norm_max' :test_grad_norm_max,
+            'test_grad_norm_l1' :test_grad_norm_l1
+           }         
+
+
+with open('./all_res/dnn_cifar10_sgd.plk') as f  :
+    pickle.dump(all_res , f)
+model.save_model('../modelsave/' ,'dnn_cifar10_sgd')        
 #    model.fill_train_data()
 #    model.eval_grad()
 #    print(model.v_grad_max)
