@@ -12,7 +12,7 @@ model.loaddata()
 model.init_net()
 
 model.data_mode(1)
-model.train_mode(2)
+model.train_mode(1)
 
 epoch=0
 
@@ -36,13 +36,23 @@ dis =[]
 #model.lr = 0.01
 
 
+temp_step = 0
 
 
-for ii in range(10000): 
+file_name =  '_'.join(model.info.values())
+
+
+printoutfile = open(file_name + '_printout.txt','w')
+
+for ii in range(10000000): 
     
 #        if model.epoch_final  ==  False:
 #            break
 #    print(ii)
+
+    if model.epoch >40:
+        break
+    
     model.global_step = 0
     model.next_batch()   
     model.train_net( )
@@ -85,14 +95,18 @@ for ii in range(10000):
         
         print("##epoch:%d##  loss : %f/%f ,   acc : %f/%f ,   lr : %f" 
               % (model.epoch,train_loss[-1] , test_loss[-1] ,  train_acc[-1],test_acc[-1],  model.lr))
+        print("##epoch:%d##  loss : %f/%f ,   acc : %f/%f ,   lr : %f" 
+              % (model.epoch,train_loss[-1] , test_loss[-1] ,  train_acc[-1],test_acc[-1],  model.lr) , file = printoutfile)
         
         
-        
+        temp_step += 1
         
 
-        if  model.epoch >=1 and  np.mean(train_loss[-5:]) -train_loss[-1]  < (model.lr/100.0 ):
+        if  temp_step >5 and  np.mean(train_loss[-5:]) -train_loss[-1]  < (model.lr/100.0 ):
             model.lr = model.lr / 10.0
+            temp_step = 0
             print('learning rate decrease to ', model.lr)
+            print('learning rate decrease to ', model.lr,file = printoutfile)
  
 all_res = {'info' : 'dnn_cifar10_sgd' ,
            'train_acc' :train_acc,
@@ -113,7 +127,7 @@ all_res = {'info' : 'dnn_cifar10_sgd' ,
            }         
 
 
-with open('./all_res/dnn_cifar10_sgd.plk') as f  :
+with open('./all_res/dnn_cifar10_sgd.plk','wb') as f  :
     pickle.dump(all_res , f)
 model.save_model('../modelsave/' ,'dnn_cifar10_sgd')        
 #    model.fill_train_data()

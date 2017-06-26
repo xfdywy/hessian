@@ -20,7 +20,7 @@ slim = tf.contrib.slim
 trunc_normal = lambda stddev: tf.truncated_normal_initializer(stddev=stddev)
 import numpy as np
 import pickle
-class mnistnet:
+class cifar100net:
     def __init__(self,num_classes=10,minibatchsize=1,imagesize=32,dropout_keep_prob=1 ,scope='cifarnet' ,learningrate = 0.001,momentum = 0.5):
        self.num_classes=num_classes  
        self.batch_size=minibatchsize
@@ -66,6 +66,7 @@ class mnistnet:
         
         self.qujian()
         self.shuffledata()
+        self.info['dataset'] = 'cifar100'
   
 
     def buildnet(self):
@@ -164,6 +165,8 @@ class mnistnet:
             self.init_allvars = tf.global_variables_initializer()
             
             self.saver = tf.train.Saver()
+            self.info['nettype'] = 'dnn'
+            
      
     def init_net(self ):
         self.sess = tf.Session()

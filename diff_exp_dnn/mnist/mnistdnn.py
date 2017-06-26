@@ -21,7 +21,7 @@ trunc_normal = lambda stddev: tf.truncated_normal_initializer(stddev=stddev)
 import numpy as np
 import pickle
 class mnistnet:
-    def __init__(self,num_classes=10,minibatchsize=1,imagesize=28,dropout_keep_prob=1 ,scope='cifarnet' ,learningrate = 0.001,momentum = 0.5):
+    def __init__(self,num_classes=10,minibatchsize=1,imagesize=28,dropout_keep_prob=1 ,scope='cifarnet' ,learningrate = 0.1,momentum = 0.5):
        self.num_classes=num_classes  
        self.batch_size=minibatchsize
        self.imagesize = imagesize
@@ -55,9 +55,9 @@ class mnistnet:
             self.x_train,self.y_train,self.x_test,self.y_test = data
             
         self.x_train  =  self.x_train / 255.0
-#        self.y_train  = self.y_train / 255.0
+#        self.y_train  = self.y_train[:,0]
         self.x_test  = self.x_test / 255.0
-#        self.t_test  = self.t_test / 255.0
+#        self.y_test  = self.y_test[:,0]
             
         self.train_data_num = len(self.x_train)
         self.test_data_num = len(self.x_test)
@@ -66,6 +66,7 @@ class mnistnet:
         
         self.qujian()
         self.shuffledata()
+        self.info['dataset'] = 'mnist'
   
 
     def buildnet(self):
@@ -81,7 +82,7 @@ class mnistnet:
         
         
         
-        with tf.variable_scope(self.scope, 'CifarNet', [self.images, self.num_classes]):
+        with tf.variable_scope(self.scope, 'mnistnet', [self.images, self.num_classes]):
 #            parameters =  tf.Variable(tf.concat( [tf.truncated_normal([28*28*64 ] ), tf.zeros([64 ]),
 #                            tf.truncated_normal([ 64 *32  ] ), tf.zeros([32 ]),
 #                            tf.truncated_normal([32*16   ] ), tf.zeros([16 ]),
@@ -115,16 +116,16 @@ class mnistnet:
 #            para_fc5_bias = tf.reshape(tf.slice(parameters,  [begin ], [10 ] ), [10 ])
 #            begin += 10
 
-            para_fc1 = tf.get_variable('para_fc1',[28*28,64])
-            para_fc1_bias = tf.get_variable('para_fc1_bias',[ 64])
+            para_fc1 = tf.get_variable('para_fc1',[28*28,128])
+            para_fc1_bias = tf.get_variable('para_fc1_bias',[ 128])
             
-            para_fc2 = tf.get_variable('para_fc2',[64,32])
-            para_fc2_bias = tf.get_variable('para_fc2_bias',[ 32])
+            para_fc2 = tf.get_variable('para_fc2',[128,64])
+            para_fc2_bias = tf.get_variable('para_fc2_bias',[ 64])
             
-            para_fc3 = tf.get_variable('para_fc3',[32,16])
-            para_fc3_bias = tf.get_variable('para_fc3_bias',[ 16])
+            para_fc3 = tf.get_variable('para_fc3',[64,32])
+            para_fc3_bias = tf.get_variable('para_fc3_bias',[ 32])
             
-            para_fc5 = tf.get_variable('para_fc5',[16,10])
+            para_fc5 = tf.get_variable('para_fc5',[32,10])
             para_fc5_bias = tf.get_variable('para_fc5_bias',[ 10])
 
             
@@ -142,17 +143,7 @@ class mnistnet:
             self.logits = tf.matmul(net,para_fc5) + para_fc5_bias
             
             y_one_hot = tf.one_hot(self.label,10)
-            
-#            self.softmax = tf.nn.softmax(self.logits)
-#            ex =  tf.exp(self.logits - tf.reshape(tf.reduce_max(self.logits,1 ), [-1,1]) ) 
-#            self.softmax = ex / tf.reshape(tf.reduce_sum(ex,1),[-1,1])
-#            
-#            self.loss = -tf.reduce_sum(y_one_hot * tf.log(self.softmax), reduction_indices=[1])
-#            self.loss = tf.reduce_sum(self.softmax - self.)
-            
-#            self.loss = softmax - y_one_hot
-            
-#            self.loss = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits,labels = y_one_hot)
+ 
             
             self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = self.logits,labels = self.label)
             self.meanloss = tf.reduce_mean(self.loss)
@@ -162,7 +153,7 @@ class mnistnet:
             self.grad_op = tf.gradients(self.meanloss, self.parameters)
             self.hess_op = None
 
-#            self.end_points['Predictions'] = self.prediction_fn(self.logits, scope='Predictions')
+ 
             
 
             
@@ -174,12 +165,15 @@ class mnistnet:
             self.init_allvars = tf.global_variables_initializer()
             
             self.saver = tf.train.Saver()
+            self.info['nettype'] = 'dnn'
+            
      
     def init_net(self ):
         self.sess = tf.Session()
         self.sess.run(self.init_allvars)
         self.global_step = 0
         self.data_point = 0
+        self.epoch_final = False
         
     def data_mode(self,mode_data) :
         
@@ -202,7 +196,7 @@ class mnistnet:
  
             
         elif mode_train ==2 :
-            self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
+#            self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
             self.info['opti_method'] = 'momentum'
  
             
@@ -224,24 +218,27 @@ class mnistnet:
  
         
     def next_batch(self):
+        
+        if self.data_point >= self.one_epoch_iter_num -1:
+            self.epoch_final = True
+        
+        if self.epoch_final == True:
+            self.data_point =0
+            self.shuffledata()
+            self.epoch = self.epoch+1
+            self.epoch_final = False        
+        
         if self.mode_data == 1: 
             
-            if self.data_point >= self.one_epoch_iter_num:
-                self.data_point =0
-                self.shuffledata()
-                self.epoch = self.epoch+1
+
             
             sample = np.random.randint(0,self.test_data_num,[self.batch_size])
             self.datax = self.x_train[sample  ]
             self.datay = self.y_train[sample]
             self.data_point += 1
             
-        elif self.mode_data ==2:   
-            
-            if self.data_point >= self.one_epoch_iter_num:
-                self.data_point =0
-                self.shuffledata()
-                self.epoch = self.epoch+1
+        elif self.mode_data ==2:             
+ 
           
             sample =  self.data_index[self.batch_index[self.data_point][0] : self.batch_index[self.data_point][1] ]
       
@@ -262,10 +259,10 @@ class mnistnet:
         if mode_train == 1:           
 #            self.info['opti_method'] = 'sgd'
             self.sess.run(self.train_sgd,self.feed_dict)
-            self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
+#            self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
             
         elif mode_train ==2 :
-            self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
+#            self.lr *= (1.0 / (1.0 + self.decay * self.global_step))
 #            self.info['opti_method'] = 'momentum'
             self.sess.run(self.train_momentum,self.feed_dict)
             
@@ -309,32 +306,42 @@ class mnistnet:
     def eval_grad(self ):
         v_grad = self.sess.run(self.grad_op,feed_dict = {self.images : self.datax , self.label : self.datay ,self.dropout_keep_prob : self.dp})
         self.v_grad = v_grad
-        self.v_grad_norm = np.linalg.norm(v_grad) / 1.0 / len(v_grad)
-        self.v_grad_max = np.max(v_grad)
-        self.v_grad_min = np.min(v_grad)
-#        self.v_grad_upper = 
+        self.cal_norm()
+#        self.cal_norm_max()
+#        self.cal_norml1()
+
         
         
-        
-    def eval_hess(self):
-        if self.hess_op == None:
-            self.hess_op = tf.hessians(self.meanloss,self.parameters)
-        self.v_hess = self.sess.run(self.hess_op, feed_dict = {self.images : self.datax , self.label : self.datay ,self.dropout_keep_prob : self.dp})
-        
-        
+#    def eval_hess(self):
+#        if self.hess_op == None:
+#            self.hess_op = tf.hessians(self.meanloss,self.parameters)
+#        self.v_hess = self.sess.run(self.hess_op, feed_dict = {self.images : self.datax , self.label : self.datay ,self.dropout_keep_prob : self.dp})
+#        
+#        
         
     def eval_weight(self):
         self.v_weight  = self.sess.run(self.parameters) 
         
  
         
-    def save_model(self , name):
+    def save_model(self ,path, name):
         tfmodel_name = name + '_' + '_'.join(self.info.values())
-        self.saver.save(self.sess,'./save/'+tfmodel_name)
+        self.saver.save(self.sess,path+tfmodel_name)
     def save_weight(self,name):    
         tfmodel_name = name + '_' + '_'.join(self.info.values())
         with open('./save/dnn/'+tfmodel_name+'.pkl','wb') as f:
             pickle.dump(self.v_weight , f)
+            
+            
+    def cal_norm(self):
+       self.v_grad_norm_l2 =  np.array([np.linalg.norm(np.ravel(x))  for x in self.v_grad])
+       self.v_grad_norm_max =  np.array([np.linalg.norm(np.ravel(x),np.inf)  for x in self.v_grad])
+       self.v_grad_norm_l1 =  np.array([np.linalg.norm(np.ravel(x),1)  for x in self.v_grad])
+            
+        
+        
+        
+        
         
         
         
