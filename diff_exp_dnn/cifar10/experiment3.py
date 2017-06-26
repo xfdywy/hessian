@@ -1,7 +1,7 @@
 from cifar10dnn import mnistnet
 import numpy as np
 import matplotlib.pyplot as plt
-model   = mnistnet(minibatchsize=64, learningrate = 0.01)
+model   = mnistnet(minibatchsize=50, learningrate = 0.01)
 
 
 model.buildnet()
@@ -41,7 +41,7 @@ for ii in range(10000):
     
 #        if model.epoch_final  ==  False:
 #            break
-
+#    print(ii)
     model.global_step = 0
     model.next_batch()   
     model.train_net( )

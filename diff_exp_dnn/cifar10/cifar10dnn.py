@@ -223,7 +223,7 @@ class mnistnet:
             self.data_point =0
             self.shuffledata()
             self.epoch = self.epoch+1
-            self.epoch_final == False        
+            self.epoch_final = False        
         
         if self.mode_data == 1: 
             
