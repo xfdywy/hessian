@@ -1,0 +1,2 @@
+model_checkpoint_path: "random_sample_cifar100_dnn_sgd_random_sample_cifar100_dnn_sgd"
+all_model_checkpoint_paths: "random_sample_cifar100_dnn_sgd_random_sample_cifar100_dnn_sgd"
