@@ -102,7 +102,11 @@ for ii in range(10000000):
         temp_step += 1
         
 
+<<<<<<< HEAD
+        if  temp_step >5 and  np.mean(train_loss[-5:]) -train_loss[-1]  < (model.lr/1000.0 ):
+=======
         if  temp_step >5 and  np.mean(train_loss[-5:]) -train_loss[-1]  < (model.lr/1000.0 ) and model.lr>1e-9:
+>>>>>>> 1c14da64c18e6a81601955358bf853941b8c11c2
             model.lr = model.lr / 10.0
             temp_step = 0
             print('learning rate decrease to ', model.lr)
