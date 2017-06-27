@@ -1,1 +1,0 @@
-This is  a project to explore the hessian matrix of the machine learning model.

@@ -14,7 +14,7 @@ from __future__ import print_function
 from keras.datasets import mnist
 
 import tensorflow as tf
-
+from collections import OrderedDict
 slim = tf.contrib.slim
 
 trunc_normal = lambda stddev: tf.truncated_normal_initializer(stddev=stddev)
@@ -30,7 +30,7 @@ class mnistnet:
        self.prediction_fn=slim.softmax
        self.is_training = True
        
-       self.info = {}
+       self.info = OrderedDict()
        
        self.lr = self.lr0 = learningrate
        self.dp = dropout_keep_prob
@@ -83,39 +83,7 @@ class mnistnet:
         
         
         with tf.variable_scope(self.scope, 'mnistnet', [self.images, self.num_classes]):
-#            parameters =  tf.Variable(tf.concat( [tf.truncated_normal([28*28*64 ] ), tf.zeros([64 ]),
-#                            tf.truncated_normal([ 64 *32  ] ), tf.zeros([32 ]),
-#                            tf.truncated_normal([32*16   ] ), tf.zeros([16 ]),
-#                            tf.truncated_normal([16*10   ] ), tf.zeros([10 ])    ],0)   )  
-#            
-#            self.parameters = parameters
-#            
-#            begin = 0
-#            para_fc1 = tf.reshape(tf.slice(parameters,  [begin ],[28*28*64 ]), [28*28 ,64] )
-#            begin += 28*28*64
-#            para_fc1_bias = tf.reshape(tf.slice(parameters,  [begin ],[64 ]), [64 ] )
-#            begin += 64
-#            
-#            para_fc2 = tf.reshape(tf.slice(parameters,  [begin, ],[64 *32  ]), [64 ,32 ] )
-#            begin += 64 *32 
-#            para_fc2_bias = tf.reshape(tf.slice(parameters,  [begin, ], [32 ] ), [32 ])
-#            begin += 32
-#            
-#            para_fc3 = tf.reshape(tf.slice(parameters,  [begin ], [32*16 ] ), [32,16])
-#            begin += 32*16
-#            para_fc3_bias = tf.reshape(tf.slice(parameters,  [begin ], [16 ] ), [16 ])
-#            begin += 16
-#            
-##            para_fc4 = tf.reshape(tf.slice(parameters,  [begin ], [384*192 ] ), [384,192])
-##            begin += 384*192
-##            para_fc4_bias = tf.reshape(tf.slice(parameters,  [begin ], [192 ] ), [192 ])
-##            begin += 192
-#            
-#            para_fc5 = tf.reshape(tf.slice(parameters,  [begin ], [16*10 ] ), [16,10])
-#            begin += 16*10
-#            para_fc5_bias = tf.reshape(tf.slice(parameters,  [begin ], [10 ] ), [10 ])
-#            begin += 10
-
+ 
             para_fc1 = tf.get_variable('para_fc1',[28*28,128])
             para_fc1_bias = tf.get_variable('para_fc1_bias',[ 128])
             
