@@ -16,7 +16,7 @@ from keras.datasets import cifar100
 import tensorflow as tf
 
 slim = tf.contrib.slim
-
+from collections import OrderedDict
 trunc_normal = lambda stddev: tf.truncated_normal_initializer(stddev=stddev)
 import numpy as np
 import pickle
@@ -30,7 +30,7 @@ class cifar100net:
        self.prediction_fn=slim.softmax
        self.is_training = True
        
-       self.info = {}
+       self.info = OrderedDict()
        
        self.lr = self.lr0 = learningrate
        self.dp = dropout_keep_prob
