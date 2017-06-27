@@ -38,7 +38,7 @@ dis =[]
 
 temp_step = 0
 
-file_index = '_1'
+file_index = '_2'
 file_name =  '_'.join(model.info.values())+file_index
 
 
